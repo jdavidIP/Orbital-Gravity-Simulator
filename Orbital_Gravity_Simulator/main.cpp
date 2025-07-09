@@ -51,12 +51,12 @@ int main() {
     instructions.setFont(open_sans);
     instructions.setCharacterSize(20);
     instructions.setFillColor(sf::Color::White);
-    instructions.setPosition(20, 70);
+    instructions.setPosition(20, 20);
 
     bool start = false;
+    bool pause = false;
     bool gotInput = false;
     bool gotSpawnPos = false;
-    bool sourceCreated = false;
 
     int num_particles = 0;
     sf::Vector2f spawn_pos;
@@ -93,7 +93,7 @@ int main() {
             }
             else if (!gotSpawnPos) {
                 // Wait for user to click spawn position for all particles
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                     spawn_pos = sf::Vector2f(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
                     for (int i = 0; i < num_particles; ++i) {
                         float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
@@ -106,18 +106,28 @@ int main() {
                 }
             }
             else {
-                // After spawning particles, controls for starting/pausing simulation and adding new particles/sources
-                if (!start && sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
+                // At least one gravity source has to be created before simulation starts
+                if (sources.size() <= 0)
+                {
+                    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+                    {
+                        sf::Vector2f pos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+                        sources.emplace_back(pos.x, pos.y, 7000);
+                    }
+
+                }
+                else if (!start && sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
                     start = true;
+                    pause = false;
                 }
 
                 if (start) {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-                        start = false;
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+                        pause = !pause;
                     }
 
                     // Add new particles or sources during simulation
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                         sf::Vector2f pos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
                         if (add_particle) {
                             float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
@@ -130,6 +140,10 @@ int main() {
                             sources.emplace_back(pos.x, pos.y, 7000);
                         }
                     }
+                } 
+                else
+                {
+                    continue;
                 }
             }
 
@@ -159,14 +173,33 @@ int main() {
             );
             window.draw(instructions);
         }
+        else if (sources.size() <= 0)
+        {
+            instructions.setString(
+                "Click to spawn a gravity source."
+            );
+            window.draw(instructions);
+        }
         else if (!start) {
             instructions.setString(
                 "Press Enter to start the simulation."
             );
             window.draw(instructions);
         }
+        else if (pause) {
+            instructions.setString(
+                "Simulation is paused\n"
+                "Left-click: Add " + std::string(add_particle ? "Particle" : "Gravity Source") + "\n" +
+                "Press P: Switch to Particle Mode\n" +
+                "Press S: Switch to Gravity Source Mode\n" +
+                "Press Space: Resume Simulation\n" +
+                "Press Esc: Quit"
+            );
+            window.draw(instructions);
+        }
         else {
             instructions.setString(
+                "Simulation is running\n"
                 "Left-click: Add " + std::string(add_particle ? "Particle" : "Gravity Source") + "\n" +
                 "Press P: Switch to Particle Mode\n" +
                 "Press S: Switch to Gravity Source Mode\n" +
