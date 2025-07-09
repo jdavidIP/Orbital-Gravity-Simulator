@@ -6,7 +6,7 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y)
 {
     s.setPosition(pos);
     s.setFillColor(sf::Color::White);
-    s.setRadius(8);
+    s.setRadius(5);
 }
 
 void Particle::render(sf::RenderWindow& window) {
@@ -14,29 +14,36 @@ void Particle::render(sf::RenderWindow& window) {
     window.draw(s);
 }
 
-void Particle::update_physics(const GravitySource& source) {
-    float dx = source.get_pos().x - pos.x;
-    float dy = source.get_pos().y - pos.y;
+void Particle::update_physics(const GravitySource& s) {
+    constexpr float dt = 1.0f / 60.0f;
+    constexpr float softening = 5.0f;
+    constexpr float max_speed = 500.0f;      
 
-    float distance = std::sqrt(dx * dx + dy * dy);
-    if (distance == 0) return; // avoid div by zero
+    float dx = s.get_pos().x - pos.x;
+    float dy = s.get_pos().y - pos.y;
 
-    float inv_dist = 1.f / distance;
+    float distance_sq = dx * dx + dy * dy + softening * softening;
+    float distance = std::sqrt(distance_sq);
 
-    float nx = inv_dist * dx;
-    float ny = inv_dist * dy;
+    float nx = dx / distance;
+    float ny = dy / distance;
 
-    float inv_square = inv_dist * inv_dist;
+    float acceleration_mag = s.get_strength() / distance_sq;
 
-    float ax = nx * source.get_strength() * inv_square;
-    float ay = ny * source.get_strength() * inv_square;
+    velocity.x += nx * acceleration_mag * dt;
+    velocity.y += ny * acceleration_mag * dt;
 
-    velocity.x += ax;
-    velocity.y += ay;
+    float speed = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    if (speed > max_speed) {
+        velocity.x *= max_speed / speed;
+        velocity.y *= max_speed / speed;
+    }
 
-    pos.x += velocity.x;
-    pos.y += velocity.y;
+    pos.x += velocity.x * dt;
+    pos.y += velocity.y * dt;
 }
+
+
 
 void Particle::set_color(sf::Color color) {
     s.setFillColor(color);
