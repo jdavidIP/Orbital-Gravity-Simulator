@@ -1,6 +1,9 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
+#define WINDOW_HEIGHT 720
+#define WINDOW_WIDTH 1200
+
 class GravitySource
 {
 	sf::Vector2f pos;
@@ -16,7 +19,7 @@ public:
 
 		s.setPosition(pos);
 		s.setFillColor(sf::Color::White);
-		s.setRadius(4);
+		s.setRadius(10);
 	}
 
 	void render(sf::RenderWindow& window)
@@ -52,7 +55,7 @@ public:
 
 		s.setPosition(pos);
 		s.setFillColor(sf::Color::White);
-		s.setRadius(4);
+		s.setRadius(8);
 	}
 
 	void render(sf::RenderWindow& window)
@@ -98,11 +101,13 @@ public:
 
 int main()
 {
-	int windowHeight = 1200;
-	int windowWidth = 720;
 
-	sf::RenderWindow window(sf::VideoMode(windowHeight, windowWidth), "Orbital Gravity Simulator");
+	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
 	window.setFramerateLimit(60);
+
+	GravitySource source(800, 500, 7000);
+
+	Particle particle(600, 700, 4, 0);
 
 	while (window.isOpen())
 	{
@@ -120,9 +125,15 @@ int main()
 				window.close();
 			}
 
-
-			window.clear();
-			window.display();
 		}
+
+
+		window.clear();
+
+		particle.update_physics(source);
+		
+		source.render(window);
+		particle.render(window);
+		window.display();
 	}
 }
