@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMULATOR_GRAVITYSOURCE_H
+#define SIMULATOR_GRAVITYSOURCE_H
 
 #include <SFML/Graphics.hpp>
 
@@ -13,3 +14,5 @@ public:
     sf::Vector2f get_pos() const;
     float get_strength() const;
 };
+
+#endif

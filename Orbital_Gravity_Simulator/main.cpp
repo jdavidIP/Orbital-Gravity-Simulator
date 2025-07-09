@@ -59,6 +59,14 @@ int main() {
                 case sf::Keyboard::G:
                     mutualGravity = !mutualGravity;
                     break;
+                case sf::Keyboard::R:
+                    if (state == AppState::Running || state == AppState::Paused)
+                    {
+                        state = AppState::AwaitingNumParticles;
+                        particles.clear();
+                        sources.clear();
+                    }
+                    break;
                 case sf::Keyboard::Enter:
                     if (state == AppState::AwaitingNumParticles && !userInput_num_particles.empty()) {
                         num_particles = std::stoi(userInput_num_particles);

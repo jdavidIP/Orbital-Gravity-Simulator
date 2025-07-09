@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMULATOR_PARTICLE_H
+#define SIMULATOR_PARTICLE_H
 
 #include <SFML/Graphics.hpp>
 #include "GravitySource.h"
@@ -21,3 +22,5 @@ public:
     sf::Vector2f get_velocity() const;
     float get_mass() const;
 };
+
+#endif

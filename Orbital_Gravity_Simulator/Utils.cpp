@@ -79,6 +79,7 @@ void renderScene(
             "Left-click: Add " + std::string(mode == Mode::AddParticle ? "Particle" : "Gravity Source") + "\n"
             "Press P/S: Switch mode\n"
             "Press Space: Resume\n"
+            "Press R: Restart\n"
             "Press Esc: Quit"
         );
         window.draw(instructions);
@@ -91,6 +92,7 @@ void renderScene(
             "Left-click: Add " + std::string(mode == Mode::AddParticle ? "Particle" : "Gravity Source") + "\n"
             "Press P/S: Switch mode\n"
             "Press Space: Pause\n"
+            "Press R: Restart\n"
             "Press Esc: Quit"
         );
         window.draw(instructions);

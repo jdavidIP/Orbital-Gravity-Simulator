@@ -16,4 +16,4 @@ enum class Mode {
     AddSource
 };
 
-#endif // APPSTATE_H
+#endif
