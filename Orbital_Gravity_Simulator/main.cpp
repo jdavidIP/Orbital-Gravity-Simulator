@@ -99,7 +99,10 @@ int main() {
                 if (mode == Mode::AddParticle) {
                     float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
                     float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    particles.emplace_back(pos.x, pos.y, vel_x, vel_y, 3);
+                    float min_mass = 0.1f;
+                    float max_mass = 6.0f;
+                    float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
+                    particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
                     float value = static_cast<float>(particles.size()) / (particles.size() + 100);
                     particles.back().set_color(map_value_to_color(value));
                 }

@@ -6,7 +6,7 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, float mas
 {
     s.setPosition(pos);
     s.setFillColor(sf::Color::White);
-    s.setRadius(5);
+    s.setRadius(2.0f * mass);
 }
 
 void Particle::render(sf::RenderWindow& window) {
