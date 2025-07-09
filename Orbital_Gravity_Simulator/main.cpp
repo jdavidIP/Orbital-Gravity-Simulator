@@ -44,6 +44,7 @@ int main() {
     sf::Vector2f spawn_pos;
 
     bool pause = false;
+    bool mutualGravity = false;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -55,6 +56,9 @@ int main() {
                 case sf::Keyboard::Escape: window.close(); break;
                 case sf::Keyboard::P: mode = Mode::AddParticle; break;
                 case sf::Keyboard::S: mode = Mode::AddSource; break;
+                case sf::Keyboard::G:
+                    mutualGravity = !mutualGravity;
+                    break;
                 case sf::Keyboard::Enter:
                     if (state == AppState::AwaitingNumParticles && !userInput_num_particles.empty()) {
                         num_particles = std::stoi(userInput_num_particles);
@@ -95,7 +99,10 @@ int main() {
                 if (mode == Mode::AddParticle) {
                     float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
                     float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    particles.emplace_back(pos.x, pos.y, vel_x, vel_y);
+                    float min_mass = 0.1f;
+                    float max_mass = 6.0f;
+                    float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
+                    particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
                     float value = static_cast<float>(particles.size()) / (particles.size() + 100);
                     particles.back().set_color(map_value_to_color(value));
                 }
@@ -107,11 +114,11 @@ int main() {
 
         // Only update physics when running and not paused
         if (state == AppState::Running && !pause) {
-            updateParticles(particles, sources);
+            updateParticles(particles, sources, mutualGravity);
         }
 
         window.clear();
-        renderScene(state, userInput_num_particles, inputText_num_particles, instructions, mode, window, num_particles, pause, sources, particles);
+        renderScene(state, userInput_num_particles, inputText_num_particles, instructions, mode, window, num_particles, pause, mutualGravity,sources, particles);
         window.display();
     }
 
