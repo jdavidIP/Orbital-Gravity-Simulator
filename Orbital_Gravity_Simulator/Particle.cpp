@@ -6,7 +6,7 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y)
 {
     s.setPosition(pos);
     s.setFillColor(sf::Color::White);
-    s.setRadius(8);
+    s.setRadius(5);
 }
 
 void Particle::render(sf::RenderWindow& window) {
@@ -19,7 +19,7 @@ void Particle::update_physics(const GravitySource& source) {
     float dy = source.get_pos().y - pos.y;
 
     float distance = std::sqrt(dx * dx + dy * dy);
-    if (distance == 0) return; // avoid div by zero
+    if (distance == 0) return;
 
     float inv_dist = 1.f / distance;
 
