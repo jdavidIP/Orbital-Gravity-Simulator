@@ -1,8 +1,8 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
-#define WINDOW_HEIGHT 720
-#define WINDOW_WIDTH 1200
+#define WINDOW_HEIGHT 900
+#define WINDOW_WIDTH 1400
 
 class GravitySource
 {
@@ -88,6 +88,11 @@ public:
 		pos.y += velocity.y;
 	}
 
+	void set_color(sf::Color color)
+	{
+		s.setFillColor(color);
+	}
+
 	sf::Vector2f get_pos()
 	{
 		return pos;
@@ -99,15 +104,59 @@ public:
 	}
 };
 
+sf::Color map_value_to_color(float value)
+{
+	if (value < 0.0f)
+	{
+		value = 0;
+	}
+	else if (value > 1.0f)
+	{
+		value = 1;
+	}
+
+	int r = 0, g = 0, b = 0;
+
+	if (value < 0.5f)
+	{
+		b = 255 * (1.0f - 2 * value);
+		g = 255 * 2 * value;
+	}
+	else {
+		g = 255 * (2.0f - 2 * value);
+		r = 255 * (2 * value - 1);
+	}
+
+	return sf::Color(r, g, b);
+}
+
 int main()
 {
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
 	window.setFramerateLimit(60);
 
-	GravitySource source(800, 500, 7000);
+	std::vector<GravitySource> sources;
 
-	Particle particle(600, 700, 4, 0);
+	sources.push_back(GravitySource(500, 500, 7000));
+	sources.push_back(GravitySource(1200, 500, 700));
+
+	int num_particles = 1000;
+
+	std::vector<Particle> particles;
+
+	for (int i = 0; i < num_particles; i++)
+	{
+		particles.push_back(Particle(600, 700, 4, 0.2 + (0.1 / num_particles) * i));
+
+		float value = (float)i / (float)num_particles;
+
+		sf::Color color = map_value_to_color(value);
+
+		particles[i].set_color(color);
+	}
+
+	Particle particle(400, 600, 4, 0);
 
 	while (window.isOpen())
 	{
@@ -130,10 +179,24 @@ int main()
 
 		window.clear();
 
-		particle.update_physics(source);
-		
-		source.render(window);
-		particle.render(window);
+		for (int i = 0; i < sources.size(); i++)
+		{
+			for (int j = 0; j < num_particles; j++)
+			{
+				particles[j].update_physics(sources[i]);
+			}
+		}
+
+		for (int i = 0; i < sources.size(); i++)
+		{
+			sources[i].render(window);
+		}
+
+		for (int j = 0; j < num_particles; j++)
+		{
+			particles[j].render(window);
+		}
+
 		window.display();
 	}
 }
