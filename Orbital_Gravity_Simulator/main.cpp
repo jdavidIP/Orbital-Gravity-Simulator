@@ -126,7 +126,7 @@ int main() {
                     particles.back().set_color(map_value_to_color(value));
                 }
                 else {
-                    sources.emplace_back(spawn_pos.x, spawn_pos.y, 700);
+                    sources.emplace_back(spawn_pos.x, spawn_pos.y, 7000);
                 }
             }
         }
