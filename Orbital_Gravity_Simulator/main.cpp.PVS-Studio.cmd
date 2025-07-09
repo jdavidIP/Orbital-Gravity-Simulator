@@ -1,1 +1,0 @@
-@call "C:\Program Files (x86)\PVS-Studio\x64\PVS-Studio.exe" --cfg "C:\Users\Ibapo\OneDrive\Escritorio\Projects\Orbital_Gravity_Simulator\Orbital_Gravity_Simulator\Orbital_Gravity_Simulator\main.cpp.PVS-Studio.cfg"
