@@ -22,17 +22,15 @@ void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, 
     for (int i = 0; i < count; ++i) {
         float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
         float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-        particles.emplace_back(pos.x, pos.y, vel_x, vel_y);
+        particles.emplace_back(pos.x, pos.y, vel_x, vel_y, 3);
         float value = static_cast<float>(i) / count;
         particles.back().set_color(map_value_to_color(value));
     }
 }
 
-void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources) {
-    for (const auto& source : sources) {
-        for (auto& particle : particles) {
-            particle.update_physics(source);
-        }
+void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity) {
+    for (auto& particle : particles) {
+        particle.update_physics(particles, sources, mutualGravity);
     }
 }
 
@@ -45,6 +43,7 @@ void renderScene(
     sf::RenderWindow& window,
     int num_particles,
     bool pause,
+    bool mutualGravity,
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 ) {
@@ -73,6 +72,7 @@ void renderScene(
     case AppState::Paused:
         instructions.setString(
             "Simulation paused.\n"
+            "Mutual Gravity: " + std::string(mutualGravity ? "ON" : "OFF") + "\n"
             "Left-click: Add " + std::string(mode == Mode::AddParticle ? "Particle" : "Gravity Source") + "\n"
             "Press P/S: Switch mode\n"
             "Press Space: Resume\n"
@@ -84,6 +84,7 @@ void renderScene(
     case AppState::Running:
         instructions.setString(
             "Simulation running.\n"
+            "Mutual Gravity: " + std::string(mutualGravity ? "ON" : "OFF") + "\n"
             "Left-click: Add " + std::string(mode == Mode::AddParticle ? "Particle" : "Gravity Source") + "\n"
             "Press P/S: Switch mode\n"
             "Press Space: Pause\n"

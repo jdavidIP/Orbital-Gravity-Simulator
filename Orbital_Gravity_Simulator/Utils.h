@@ -9,7 +9,7 @@
 
 sf::Color map_value_to_color(float value);
 void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count);
-void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources);
+void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity);
 void renderScene(
     AppState state,
     const std::string& userInput_num_particles,
@@ -19,6 +19,7 @@ void renderScene(
     sf::RenderWindow& window,
     int num_particles,
     bool pause,
+    bool mutualGravity,
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 );
