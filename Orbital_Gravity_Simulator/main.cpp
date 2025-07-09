@@ -30,12 +30,13 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
     window.setFramerateLimit(60);
 
-    // Text
     sf::Font open_sans;
-    open_sans.loadFromFile("C:\\Users\\Ibapo\\OneDrive\\Escritorio\\Projects\\SMFL_Learning\\SFML_FONTS\\Open_Sans\\OpenSans-VariableFont_wdth,wght.ttf");
+    if (!open_sans.loadFromFile("C:\\Users\\Ibapo\\OneDrive\\Escritorio\\Projects\\SMFL_Learning\\SFML_FONTS\\Open_Sans\\OpenSans-VariableFont_wdth,wght.ttf")) {
+        std::cerr << "Failed to load font!\n";
+        return -1;
+    }
 
     std::vector<GravitySource> sources;
-
     std::vector<Particle> particles;
 
     std::string userInput_num_particles;
@@ -50,12 +51,16 @@ int main() {
     instructions.setFont(open_sans);
     instructions.setCharacterSize(20);
     instructions.setFillColor(sf::Color::White);
-    instructions.setPosition(20, 20);
+    instructions.setPosition(20, 70);
 
     bool start = false;
     bool gotInput = false;
+    bool gotSpawnPos = false;
+    bool sourceCreated = false;
 
-    int num_particles;
+    int num_particles = 0;
+    sf::Vector2f spawn_pos;
+
     bool add_source = false;
     bool add_particle = true;
 
@@ -67,42 +72,68 @@ int main() {
             }
 
             if (!gotInput) {
+                // Handle user typing number of particles
                 if (event.type == sf::Event::TextEntered) {
-                    if (event.text.unicode == '\b') {
+                    if (event.text.unicode == '\b') { // Backspace
                         if (!userInput_num_particles.empty())
                             userInput_num_particles.pop_back();
                     }
                     else if (event.text.unicode >= '0' && event.text.unicode <= '9') {
                         userInput_num_particles += static_cast<char>(event.text.unicode);
                     }
-                    else if (event.text.unicode == '\r' || event.text.unicode == '\n') {
+                    else if (event.text.unicode == '\r' || event.text.unicode == '\n') { // Enter key
                         if (!userInput_num_particles.empty()) {
                             num_particles = std::stoi(userInput_num_particles);
-                            gotInput = true;
-
-                            for (int i = 0; i < num_particles; ++i) {
-                                particles.emplace_back(600, 700, 4, 0.2 + (0.1 / num_particles) * i);
-                                float value = static_cast<float>(i) / num_particles;
-                                particles[i].set_color(map_value_to_color(value));
+                            if (num_particles > 0) {
+                                gotInput = true;
                             }
                         }
                     }
                 }
             }
+            else if (!gotSpawnPos) {
+                // Wait for user to click spawn position for all particles
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                    spawn_pos = sf::Vector2f(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+                    for (int i = 0; i < num_particles; ++i) {
+                        float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                        float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                        particles.emplace_back(spawn_pos.x, spawn_pos.y, vel_x, vel_y);
+                        float value = static_cast<float>(i) / num_particles;
+                        particles[i].set_color(map_value_to_color(value));
+                    }
+                    gotSpawnPos = true;
+                }
+            }
             else {
+                // After spawning particles, controls for starting/pausing simulation and adding new particles/sources
                 if (!start && sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
                     start = true;
                 }
 
                 if (start) {
-
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-                    {
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
                         start = false;
+                    }
+
+                    // Add new particles or sources during simulation
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                        sf::Vector2f pos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+                        if (add_particle) {
+                            float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                            float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                            particles.emplace_back(pos.x, pos.y, vel_x, vel_y);
+                            float value = static_cast<float>(particles.size()) / (particles.size() + 100);
+                            particles.back().set_color(map_value_to_color(value));
+                        }
+                        else {
+                            sources.emplace_back(pos.x, pos.y, 7000);
+                        }
                     }
                 }
             }
 
+            // Mode switching (outside above condition to allow anytime)
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
                 add_particle = true;
                 add_source = false;
@@ -111,38 +142,22 @@ int main() {
                 add_particle = false;
                 add_source = true;
             }
-
-
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
-                sf::Vector2f spawn_pos(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
-
-                if (add_particle) {
-                    float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-
-                    particles.emplace_back(spawn_pos.x, spawn_pos.y, vel_x, vel_y);
-                    float value = static_cast<float>(particles.size()) / (particles.size() + 100);
-                    particles.back().set_color(map_value_to_color(value));
-                }
-                else {
-                    sources.emplace_back(spawn_pos.x, spawn_pos.y, 7000);
-                }
-            }
         }
 
+        // Rendering
         window.clear();
-
-        std::string mode = add_particle ? "Particle Mode" : "Gravity Source Mode";
 
         if (!gotInput) {
             inputText_num_particles.setString(
-                "Left-click: Add " + mode + "\n"
-                "Press P: Switch to Particle Mode\n"
-                "Press S: Switch to Gravity Source Mode\n"
                 "Enter number of particles: " + userInput_num_particles + "\nPress Enter to confirm."
             );
             window.draw(inputText_num_particles);
+        }
+        else if (!gotSpawnPos) {
+            instructions.setString(
+                "Click to choose spawn position for all " + std::to_string(num_particles) + " particles."
+            );
+            window.draw(instructions);
         }
         else if (!start) {
             instructions.setString(
@@ -152,14 +167,15 @@ int main() {
         }
         else {
             instructions.setString(
-                "Left-click: Add " + mode + "\n"
-                "Press P: Switch to Particle Mode\n"
-                "Press S: Switch to Gravity Source Mode\n"
-                "Press Space: To Pause Simulation\n"
+                "Left-click: Add " + std::string(add_particle ? "Particle" : "Gravity Source") + "\n" +
+                "Press P: Switch to Particle Mode\n" +
+                "Press S: Switch to Gravity Source Mode\n" +
+                "Press Space: Pause Simulation\n" +
                 "Press Esc: Quit"
             );
             window.draw(instructions);
 
+            // Update physics
             for (const auto& source : sources) {
                 for (auto& particle : particles) {
                     particle.update_physics(source);
@@ -167,17 +183,16 @@ int main() {
             }
         }
 
+        // Render sources and particles
         for (auto& source : sources) {
             source.render(window);
         }
-
         for (auto& particle : particles) {
             particle.render(window);
         }
 
         window.display();
     }
-
 
     return 0;
 }
