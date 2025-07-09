@@ -27,22 +27,12 @@ sf::Color map_value_to_color(float value) {
 }
 
 int main() {
-    int num_particles;
-    std::cout << "Enter a number of particles: ";
-    std::cin >> num_particles;
-
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
     window.setFramerateLimit(60);
 
     // Text
     sf::Font open_sans;
     open_sans.loadFromFile("C:\\Users\\Ibapo\\OneDrive\\Escritorio\\Projects\\SMFL_Learning\\SFML_FONTS\\Open_Sans\\OpenSans-VariableFont_wdth,wght.ttf");
-
-    sf::Text my_text;
-    my_text.setFont(open_sans);
-    my_text.setString("Press Enter to see a cool thing :)");
-    my_text.setPosition(600, 360);
-    my_text.setFillColor(sf::Color::White);
 
     std::vector<GravitySource> sources = {
         GravitySource(500, 500, 7000),
@@ -51,13 +41,26 @@ int main() {
 
     std::vector<Particle> particles;
 
-    for (int i = 0; i < num_particles; ++i) {
-        particles.emplace_back(600, 700, 4, 0.2 + (0.1 / num_particles) * i);
-        float value = static_cast<float>(i) / num_particles;
-        particles[i].set_color(map_value_to_color(value));
-    }
+    std::string userInput_num_particles;
+
+    sf::Text inputText_num_particles;
+    inputText_num_particles.setFont(open_sans);
+    inputText_num_particles.setCharacterSize(24);
+    inputText_num_particles.setFillColor(sf::Color::White);
+    inputText_num_particles.setPosition(600, 300);
+
+    sf::Text instructions;
+    instructions.setFont(open_sans);
+    instructions.setCharacterSize(20);
+    instructions.setFillColor(sf::Color::White);
+    instructions.setPosition(20, 20);
 
     bool start = false;
+    bool gotInput = false;
+
+    int num_particles;
+    bool add_source = false;
+    bool add_particle = true;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -66,38 +69,93 @@ int main() {
                 window.close();
             }
 
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
-            {
-                start = true;
+            if (!gotInput) {
+                if (event.type == sf::Event::TextEntered) {
+                    if (event.text.unicode == '\b') {
+                        if (!userInput_num_particles.empty())
+                            userInput_num_particles.pop_back();
+                    }
+                    else if (event.text.unicode >= '0' && event.text.unicode <= '9') {
+                        userInput_num_particles += static_cast<char>(event.text.unicode);
+                    }
+                    else if (event.text.unicode == '\r' || event.text.unicode == '\n') {
+                        if (!userInput_num_particles.empty()) {
+                            num_particles = std::stoi(userInput_num_particles);
+                            gotInput = true;
+
+                            for (int i = 0; i < num_particles; ++i) {
+                                particles.emplace_back(600, 700, 4, 0.2 + (0.1 / num_particles) * i);
+                                float value = static_cast<float>(i) / num_particles;
+                                particles[i].set_color(map_value_to_color(value));
+                            }
+                        }
+                    }
+                }
             }
+            else {
+                if (!start && sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) {
+                    start = true;
+                }
 
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-                sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
-                sf::Vector2f spawn_pos(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
+                if (start) {
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
+                        add_particle = true;
+                        add_source = false;
+                    }
+                    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                        add_particle = false;
+                        add_source = true;
+                    }
 
-                // Example initial velocity: small random push
-                float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;  // -1.0 to +1.0
-                float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+                        sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
+                        sf::Vector2f spawn_pos(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
 
-                particles.emplace_back(spawn_pos.x, spawn_pos.y, vel_x, vel_y);
-                // Optional: color based on total count
-                float value = static_cast<float>(particles.size()) / (particles.size() + 100);
-                particles.back().set_color(map_value_to_color(value));
+                        if (add_particle) {
+                            float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+                            float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
+
+                            particles.emplace_back(spawn_pos.x, spawn_pos.y, vel_x, vel_y);
+                            float value = static_cast<float>(particles.size()) / (particles.size() + 100);
+                            particles.back().set_color(map_value_to_color(value));
+                        }
+                        else {
+                            sources.emplace_back(spawn_pos.x, spawn_pos.y, 700);
+                        }
+                    }
+                }
             }
         }
-       
+
         window.clear();
 
-        if (start) {
+        if (!gotInput) {
+            inputText_num_particles.setString(
+                "Enter number of particles: " + userInput_num_particles + "\nPress Enter to confirm."
+            );
+            window.draw(inputText_num_particles);
+        }
+        else if (!start) {
+            instructions.setString(
+                "Press Enter to start the simulation."
+            );
+            window.draw(instructions);
+        }
+        else {
+            std::string mode = add_particle ? "Particle Mode" : "Gravity Source Mode";
+            instructions.setString(
+                "Left-click: Add " + mode + "\n"
+                "Press P: Switch to Particle Mode\n"
+                "Press S: Switch to Gravity Source Mode\n"
+                "Press Esc: Quit"
+            );
+            window.draw(instructions);
+
             for (const auto& source : sources) {
                 for (auto& particle : particles) {
                     particle.update_physics(source);
                 }
             }
-        }
-        else
-        {
-            window.draw(my_text);
         }
 
         for (auto& source : sources) {
@@ -110,6 +168,7 @@ int main() {
 
         window.display();
     }
+
 
     return 0;
 }
