@@ -18,16 +18,39 @@ sf::Color map_value_to_color(float value) {
     return sf::Color(r, g, b);
 }
 
-void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count, float min_mass, float max_mass) {
+void addParticlesAtPosition(
+    std::vector<Particle>& particles,
+    sf::Vector2f pos,
+    int count,
+    float min_mass,
+    float max_mass,
+    const GravitySource& source
+) {
+
     for (int i = 0; i < count; ++i) {
-        float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-        float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
         float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
+
+        // Vector from source to spawn pos
+        float dx = pos.x - source.get_pos().x;
+        float dy = pos.y - source.get_pos().y;
+        float r = std::sqrt(dx * dx + dy * dy);
+
+        // Orbital speed
+        float v = std::sqrt(G * source.get_strength() / r);
+
+        // Tangent direction (perpendicular to radial)
+        float tx = -dy / r;
+        float ty = dx / r;
+
+        float vel_x = v * tx;
+        float vel_y = v * ty;
+
         particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
         float value = static_cast<float>(i) / count;
         particles.back().set_color(map_value_to_color(value));
     }
 }
+
 
 void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity) {
     for (auto& particle : particles) {
@@ -84,7 +107,7 @@ void renderScene(
 
     case AppState::AwaitingSources:
         instructions.setString(
-            "Click to add gravity sources.\nPress Enter to start simulation."
+            "Click to add gravity sources.\nPress Enter to confirm."
         );
         window.draw(instructions);
         break;
@@ -118,4 +141,19 @@ void renderScene(
 
     for (auto& source : sources) source.render(window);
     for (auto& particle : particles) particle.render(window);
+}
+
+GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources) {
+    GravitySource* closest = nullptr;
+    float minDist2 = std::numeric_limits<float>::max();
+    for (auto& s : sources) {
+        float dx = s.get_pos().x - pos.x;
+        float dy = s.get_pos().y - pos.y;
+        float dist2 = dx * dx + dy * dy;
+        if (dist2 < minDist2) {
+            minDist2 = dist2;
+            closest = &s;
+        }
+    }
+    return closest;
 }

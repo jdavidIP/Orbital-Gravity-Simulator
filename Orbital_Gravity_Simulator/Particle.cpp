@@ -17,87 +17,116 @@ void Particle::render(sf::RenderWindow& window) {
 void Particle::update_physics(const GravitySource& source) {
     constexpr float dt = 1.0f / 60.0f;
     constexpr float softening = 5.0f;
-    constexpr float max_speed = 500.0f;
 
-    float dx = source.get_pos().x - pos.x;
-    float dy = source.get_pos().y - pos.y;
-    float distance_sq = dx * dx + dy * dy + softening * softening;
-    float distance = std::sqrt(distance_sq);
-
-    float nx = dx / distance;
-    float ny = dy / distance;
-
-    // Acceleration: F = G * M_source * m / r², a = F / m = G * M_source / r²
-    float acceleration_mag = source.get_strength() / distance_sq;
-
-    velocity.x += nx * acceleration_mag * dt;
-    velocity.y += ny * acceleration_mag * dt;
-
-    float speed = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-    if (speed > max_speed) {
-        velocity.x *= max_speed / speed;
-        velocity.y *= max_speed / speed;
-    }
-
-    pos.x += velocity.x * dt;
-    pos.y += velocity.y * dt;
-}
-
-void Particle::update_physics(const std::vector<Particle>& others, const std::vector<GravitySource>& sources, bool mutualGravity) {
-    constexpr float G = 1000.0f;
-    constexpr float dt = 1.0f / 60.0f;
-    constexpr float softening = 5.0f;
-    constexpr float max_speed = 500.0f;
-
-    sf::Vector2f acceleration(0.f, 0.f);
-
-    // Gravity from GravitySources
-    for (const auto& source : sources) {
+    // --- Compute acceleration at current position --- 
+    sf::Vector2f a0;
+    {
         float dx = source.get_pos().x - pos.x;
         float dy = source.get_pos().y - pos.y;
-        float distance_sq = dx * dx + dy * dy + softening * softening;
-        float distance = std::sqrt(distance_sq);
-
-        float nx = dx / distance;
-        float ny = dy / distance;
-
-        float a_mag = source.get_strength() / distance_sq;
-        acceleration.x += nx * a_mag;
-        acceleration.y += ny * a_mag;
+        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist = std::sqrt(dist2);
+        float a_mag = G * source.get_strength() / dist2;
+        a0 = { a_mag * dx / dist, a_mag * dy / dist };
     }
 
-    // Mutual gravity between particles
-    if (mutualGravity) {
-        for (const auto& other : others) {
-            if (&other == this) continue; // Skip self
+    // --- First half-step for velocity ---
+    velocity.x += 0.5f * a0.x * dt;
+    velocity.y += 0.5f * a0.y * dt;
 
+    // --- Full step for position ---
+    pos.x += velocity.x * dt;
+    pos.y += velocity.y * dt;
+
+    // --- Compute acceleration at new position ---
+    sf::Vector2f a1;
+    {
+        float dx = source.get_pos().x - pos.x;
+        float dy = source.get_pos().y - pos.y;
+        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist = std::sqrt(dist2);
+        float a_mag = G * source.get_strength() / dist2;
+        a1 = { a_mag * dx / dist, a_mag * dy / dist };
+    }
+
+    // --- Second half-step for velocity ---
+    velocity.x += 0.5f * a1.x * dt;
+    velocity.y += 0.5f * a1.y * dt;
+}
+
+void Particle::update_physics(
+    const std::vector<Particle>& others,
+    const std::vector<GravitySource>& sources,
+    bool mutualGravity
+) {
+    constexpr float dt = 1.0f / 60.0f;
+    constexpr float softening = 5.0f;
+
+    // --- 1) Compute acceleration at current position ---
+    sf::Vector2f accel0(0.f, 0.f);
+
+    // from fixed sources
+    for (auto const& src : sources) {
+        float dx = src.get_pos().x - pos.x;
+        float dy = src.get_pos().y - pos.y;
+        float dist2 = dx * dx + dy * dy + softening * softening;
+        float invDist = 1.0f / std::sqrt(dist2);
+        float a_mag = G * src.get_strength() * invDist * invDist;
+        accel0.x += a_mag * dx * invDist;
+        accel0.y += a_mag * dy * invDist;
+    }
+
+    // mutual gravity
+    if (mutualGravity) {
+        for (auto const& other : others) {
+            if (&other == this) continue;
             float dx = other.get_pos().x - pos.x;
             float dy = other.get_pos().y - pos.y;
-            float distance_sq = dx * dx + dy * dy + softening * softening;
-            float distance = std::sqrt(distance_sq);
-
-            float nx = dx / distance;
-            float ny = dy / distance;
-
-            // a = G * m_other / r²
-            float a_mag = G * other.get_mass() / distance_sq;
-            acceleration.x += nx * a_mag;
-            acceleration.y += ny * a_mag;
+            float dist2 = dx * dx + dy * dy + softening * softening;
+            float invDist = 1.0f / std::sqrt(dist2);
+            float a_mag = G * other.get_mass() * invDist * invDist;
+            // Note: F=G*m_other*m_self/r^2, a=F/m_self => G*m_other/r^2
+            accel0.x += a_mag * dx * invDist;
+            accel0.y += a_mag * dy * invDist;
         }
     }
 
-    velocity.x += acceleration.x * dt;
-    velocity.y += acceleration.y * dt;
+    // --- 2) Half-step velocity ---
+    velocity += accel0 * (0.5f * dt);
 
-    float speed = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-    if (speed > max_speed) {
-        velocity.x *= max_speed / speed;
-        velocity.y *= max_speed / speed;
+    // --- 3) Full-step position ---
+    pos += velocity * dt;
+
+    // --- 4) Compute acceleration at new position ---
+    sf::Vector2f accel1(0.f, 0.f);
+
+    for (auto const& src : sources) {
+        float dx = src.get_pos().x - pos.x;
+        float dy = src.get_pos().y - pos.y;
+        float dist2 = dx * dx + dy * dy + softening * softening;
+        float invDist = 1.0f / std::sqrt(dist2);
+        float a_mag = G * src.get_strength() * invDist * invDist;
+        accel1.x += a_mag * dx * invDist;
+        accel1.y += a_mag * dy * invDist;
     }
 
-    pos.x += velocity.x * dt;
-    pos.y += velocity.y * dt;
+    if (mutualGravity) {
+        for (auto const& other : others) {
+            if (&other == this) continue;
+            float dx = other.get_pos().x - pos.x;
+            float dy = other.get_pos().y - pos.y;
+            float dist2 = dx * dx + dy * dy + softening * softening;
+            float invDist = 1.0f / std::sqrt(dist2);
+            float a_mag = G * other.get_mass() * invDist * invDist / mass;
+            accel1.x += a_mag * dx * invDist;
+            accel1.y += a_mag * dy * invDist;
+        }
+    }
+
+    // --- 5) Second half-step velocity ---
+    velocity += accel1 * (0.5f * dt);
+
 }
+
 
 void Particle::set_color(sf::Color color) {
     s.setFillColor(color);

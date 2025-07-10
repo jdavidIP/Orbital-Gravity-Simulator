@@ -71,6 +71,8 @@ int main() {
                         state = AppState::AwaitingMinMass;
                         particles.clear();
                         sources.clear();
+                        mutualGravity = false;
+                        pause = false;
                     }
                     break;
                 case sf::Keyboard::Enter:
@@ -86,10 +88,10 @@ int main() {
                     }
                     else if (state == AppState::AwaitingNumParticles && !userInput_num_particles.empty()) {
                         num_particles = std::stoi(userInput_num_particles);
-                        if (num_particles > 0) state = AppState::AwaitingSpawnPos;
+                        if (num_particles > 0) state = AppState::AwaitingSources;
                     }
                     else if (state == AppState::AwaitingSources && !sources.empty()) {
-                        state = AppState::Running;
+                        state = AppState::AwaitingSpawnPos;
                         pause = false;
                     }
                     break;
@@ -129,8 +131,13 @@ int main() {
             }
             else if (state == AppState::AwaitingSpawnPos && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 spawn_pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                addParticlesAtPosition(particles, spawn_pos, num_particles, min_mass, max_mass);
-                state = AppState::AwaitingSources;
+
+                GravitySource* target = findNearestSource(spawn_pos, sources);
+                if (target) {
+                    addParticlesAtPosition(particles, spawn_pos, num_particles, min_mass, max_mass, *target);
+                }
+
+                state = AppState::Running;
             }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };

@@ -6,6 +6,7 @@
 
 constexpr float MAX_MASS = 5.0f;
 constexpr float MIN_MASS = 0.1f;
+constexpr float G = 300.0f;
 
 class Particle {
     sf::Vector2f pos;
