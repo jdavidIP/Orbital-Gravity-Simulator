@@ -6,7 +6,13 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, float mas
 {
     s.setPosition(pos);
     s.setFillColor(sf::Color::White);
-    s.setRadius(2.0f * mass);
+
+    float minR = 1.5f;
+    float maxR = 15.0f;
+    float logMass = std::log10(mass + 1.0f);
+    float scale = (logMass / std::log10(MAX_MASS + 1.0f));
+    float radius = minR + scale * (maxR - minR);
+    s.setRadius(radius);
 }
 
 void Particle::render(sf::RenderWindow& window) {
@@ -15,15 +21,13 @@ void Particle::render(sf::RenderWindow& window) {
 }
 
 void Particle::update_physics(const GravitySource& source) {
-    constexpr float dt = 1.0f / 60.0f;
-    constexpr float softening = 5.0f;
 
     // --- Compute acceleration at current position --- 
     sf::Vector2f a0;
     {
         float dx = source.get_pos().x - pos.x;
         float dy = source.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
         float dist = std::sqrt(dist2);
         float a_mag = G * source.get_strength() / dist2;
         a0 = { a_mag * dx / dist, a_mag * dy / dist };
@@ -42,7 +46,7 @@ void Particle::update_physics(const GravitySource& source) {
     {
         float dx = source.get_pos().x - pos.x;
         float dy = source.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
         float dist = std::sqrt(dist2);
         float a_mag = G * source.get_strength() / dist2;
         a1 = { a_mag * dx / dist, a_mag * dy / dist };
@@ -58,8 +62,6 @@ void Particle::update_physics(
     const std::vector<GravitySource>& sources,
     bool mutualGravity
 ) {
-    constexpr float dt = 1.0f / 60.0f;
-    constexpr float softening = 5.0f;
 
     // --- 1) Compute acceleration at current position ---
     sf::Vector2f accel0(0.f, 0.f);
@@ -68,7 +70,7 @@ void Particle::update_physics(
     for (auto const& src : sources) {
         float dx = src.get_pos().x - pos.x;
         float dy = src.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
         float invDist = 1.0f / std::sqrt(dist2);
         float a_mag = G * src.get_strength() * invDist * invDist;
         accel0.x += a_mag * dx * invDist;
@@ -81,7 +83,7 @@ void Particle::update_physics(
             if (&other == this) continue;
             float dx = other.get_pos().x - pos.x;
             float dy = other.get_pos().y - pos.y;
-            float dist2 = dx * dx + dy * dy + softening * softening;
+            float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
             float invDist = 1.0f / std::sqrt(dist2);
             float a_mag = G * other.get_mass() * invDist * invDist;
             // Note: F=G*m_other*m_self/r^2, a=F/m_self => G*m_other/r^2
@@ -102,7 +104,7 @@ void Particle::update_physics(
     for (auto const& src : sources) {
         float dx = src.get_pos().x - pos.x;
         float dy = src.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + softening * softening;
+        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
         float invDist = 1.0f / std::sqrt(dist2);
         float a_mag = G * src.get_strength() * invDist * invDist;
         accel1.x += a_mag * dx * invDist;
@@ -114,7 +116,7 @@ void Particle::update_physics(
             if (&other == this) continue;
             float dx = other.get_pos().x - pos.x;
             float dy = other.get_pos().y - pos.y;
-            float dist2 = dx * dx + dy * dy + softening * softening;
+            float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
             float invDist = 1.0f / std::sqrt(dist2);
             float a_mag = G * other.get_mass() * invDist * invDist / mass;
             accel1.x += a_mag * dx * invDist;

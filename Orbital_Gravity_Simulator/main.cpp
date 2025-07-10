@@ -6,14 +6,17 @@
 #include "Particle.h"
 #include "Utils.h"
 
+// SCALES
+// 1 px = 1000 km
+// 1 mass unit = 1 earth (5.97×10^24 kg)
+
 constexpr int WINDOW_HEIGHT = 900;
 constexpr int WINDOW_WIDTH = 1400;
-constexpr float DEFAULT_GRAVITY_STRENGTH = 7000.0f;
-
-
+constexpr float DEFAULT_GRAVITY_STRENGTH = 25000.0f; // Based on a small red dwarf's mass
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    sf::RenderWindow window(desktop, "Gravity Simulator", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
 
     sf::Font open_sans;
@@ -144,7 +147,7 @@ int main() {
             }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                sources.emplace_back(pos.x, pos.y, sources.size() > 0 ? 900.0f : 200.0f);
+                sources.emplace_back(pos.x, pos.y, DEFAULT_GRAVITY_STRENGTH);
             }
             else if ((state == AppState::Running || state == AppState::Paused) && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };

@@ -54,7 +54,7 @@ void addParticlesAtPosition(
     }
 
     // Color mapping
-    float value = static_cast<float>(i) / count;
+    float value = i == count ? static_cast<float>(i) / (count + 100) : static_cast<float>(i) / count;
     particles.back().set_color(map_value_to_color(value));
 }
 

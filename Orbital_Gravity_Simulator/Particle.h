@@ -4,9 +4,11 @@
 #include <SFML/Graphics.hpp>
 #include "GravitySource.h"
 
-constexpr float MAX_MASS = 5.0f;
+constexpr float MAX_MASS = 318.0f; // Based on Jupyter's mass
 constexpr float MIN_MASS = 0.1f;
-constexpr float G = 300.0f;
+constexpr float G = 0.03f;
+constexpr float SOFTENING = 5.0f;
+constexpr float dt = 0.5f;  // 0.5f, normal speed - 1.5f faster speed - 3.0f fastest speed
 
 class Particle {
     sf::Vector2f pos;
