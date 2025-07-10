@@ -18,12 +18,10 @@ sf::Color map_value_to_color(float value) {
     return sf::Color(r, g, b);
 }
 
-void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count) {
+void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count, float min_mass, float max_mass) {
     for (int i = 0; i < count; ++i) {
         float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
         float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-        float min_mass = 0.1f;
-        float max_mass = 6.0f;
         float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
         particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
         float value = static_cast<float>(i) / count;
@@ -40,7 +38,9 @@ void updateParticles(std::vector<Particle>& particles, const std::vector<Gravity
 void renderScene(
     AppState state,
     const std::string& userInput_num_particles,
-    sf::Text& inputText_num_particles,
+    const std::string& userInput_min_mass,
+    const std::string& userInput_max_mass,
+    sf::Text& inputText,
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
@@ -51,11 +51,28 @@ void renderScene(
     std::vector<Particle>& particles
 ) {
     switch (state) {
-    case AppState::AwaitingNumParticles:
-        inputText_num_particles.setString(
-            "Enter number of particles: " + userInput_num_particles + "\nPress Enter to confirm."
+    case AppState::AwaitingMinMass:
+        inputText.setString(
+            "Enter the minimum mass (> 0.1): " + userInput_min_mass + "\nPress Enter to confirm."
         );
-        window.draw(inputText_num_particles);
+        window.draw(inputText);
+        break;
+
+    case AppState::AwaitingMaxMass:
+        inputText.setString(
+            "Enter the minimum mass (> 0.1): " + userInput_min_mass + 
+            "\nEnter the maximum mass (< 5.0): " + userInput_max_mass + "\nPress Enter to confirm."
+        );
+        window.draw(inputText);
+        break;
+
+    case AppState::AwaitingNumParticles:
+        inputText.setString(
+            "Enter the minimum mass (> 0.1): " + userInput_min_mass +
+            "\nEnter the maximum mass (< 5.0): " + userInput_max_mass +
+            "\nEnter number of particles: " + userInput_num_particles + "\nPress Enter to confirm."
+        );
+        window.draw(inputText);
         break;
 
     case AppState::AwaitingSpawnPos:

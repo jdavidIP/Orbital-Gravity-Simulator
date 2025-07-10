@@ -4,6 +4,9 @@
 #include <SFML/Graphics.hpp>
 #include "GravitySource.h"
 
+constexpr float MAX_MASS = 5.0f;
+constexpr float MIN_MASS = 0.1f;
+
 class Particle {
     sf::Vector2f pos;
     sf::Vector2f velocity;

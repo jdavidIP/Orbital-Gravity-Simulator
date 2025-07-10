@@ -4,6 +4,8 @@
 // Enum for the overall application state
 enum class AppState {
     AwaitingNumParticles,
+    AwaitingMinMass,
+    AwaitingMaxMass,
     AwaitingSpawnPos,
     AwaitingSources,
     Running,

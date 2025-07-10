@@ -10,6 +10,8 @@ constexpr int WINDOW_HEIGHT = 900;
 constexpr int WINDOW_WIDTH = 1400;
 constexpr float DEFAULT_GRAVITY_STRENGTH = 7000.0f;
 
+
+
 int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Orbital Gravity Simulator");
     window.setFramerateLimit(60);
@@ -24,12 +26,14 @@ int main() {
     std::vector<Particle> particles;
 
     std::string userInput_num_particles;
+    std::string userInput_mass_min;
+    std::string userInput_mass_max;
 
-    sf::Text inputText_num_particles;
-    inputText_num_particles.setFont(open_sans);
-    inputText_num_particles.setCharacterSize(24);
-    inputText_num_particles.setFillColor(sf::Color::White);
-    inputText_num_particles.setPosition(20, 20);
+    sf::Text inputText;
+    inputText.setFont(open_sans);
+    inputText.setCharacterSize(24);
+    inputText.setFillColor(sf::Color::White);
+    inputText.setPosition(20, 20);
 
     sf::Text instructions;
     instructions.setFont(open_sans);
@@ -37,10 +41,12 @@ int main() {
     instructions.setFillColor(sf::Color::White);
     instructions.setPosition(20, 20);
 
-    AppState state = AppState::AwaitingNumParticles;
+    AppState state = AppState::AwaitingMinMass;
     Mode mode = Mode::AddParticle;
 
     int num_particles = 0;
+    float min_mass = 0.0f;
+    float max_mass = 0.0f;
     sf::Vector2f spawn_pos;
 
     bool pause = false;
@@ -62,13 +68,23 @@ int main() {
                 case sf::Keyboard::R:
                     if (state == AppState::Running || state == AppState::Paused)
                     {
-                        state = AppState::AwaitingNumParticles;
+                        state = AppState::AwaitingMinMass;
                         particles.clear();
                         sources.clear();
                     }
                     break;
                 case sf::Keyboard::Enter:
-                    if (state == AppState::AwaitingNumParticles && !userInput_num_particles.empty()) {
+                    if (state == AppState::AwaitingMinMass && !userInput_mass_min.empty())
+                    {
+                        min_mass = std::stof(userInput_mass_min);
+                        if (min_mass >= MIN_MASS && min_mass <= MAX_MASS - 0.01f) state = AppState::AwaitingMaxMass;
+                    }
+                    else if (state == AppState::AwaitingMaxMass && !userInput_mass_max.empty())
+                    {
+                        max_mass = std::stof(userInput_mass_max);
+                        if (max_mass <= MAX_MASS && max_mass > min_mass) state = AppState::AwaitingNumParticles;
+                    }
+                    else if (state == AppState::AwaitingNumParticles && !userInput_num_particles.empty()) {
                         num_particles = std::stoi(userInput_num_particles);
                         if (num_particles > 0) state = AppState::AwaitingSpawnPos;
                     }
@@ -93,9 +109,27 @@ int main() {
                     userInput_num_particles += static_cast<char>(event.text.unicode);
                 }
             }
+            else if (state == AppState::AwaitingMinMass && event.type == sf::Event::TextEntered)
+            {
+                if (event.text.unicode == '\b' && !userInput_mass_min.empty()) {
+                    userInput_mass_min.pop_back();
+                }
+                else if ((event.text.unicode >= '0' && event.text.unicode <= '9') || event.text.unicode == '.') {
+                    userInput_mass_min += static_cast<char>(event.text.unicode);
+                }
+            }
+            else if (state == AppState::AwaitingMaxMass && event.type == sf::Event::TextEntered)
+            {
+                if (event.text.unicode == '\b' && !userInput_mass_max.empty()) {
+                    userInput_mass_max.pop_back();
+                }
+                else if ((event.text.unicode >= '0' && event.text.unicode <= '9') || event.text.unicode == '.') {
+                    userInput_mass_max += static_cast<char>(event.text.unicode);
+                }
+            }
             else if (state == AppState::AwaitingSpawnPos && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 spawn_pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                addParticlesAtPosition(particles, spawn_pos, num_particles);
+                addParticlesAtPosition(particles, spawn_pos, num_particles, min_mass, max_mass);
                 state = AppState::AwaitingSources;
             }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
@@ -107,8 +141,6 @@ int main() {
                 if (mode == Mode::AddParticle) {
                     float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
                     float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    float min_mass = 0.1f;
-                    float max_mass = 6.0f;
                     float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
                     particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
                     float value = static_cast<float>(particles.size()) / (particles.size() + 100);
@@ -126,7 +158,7 @@ int main() {
         }
 
         window.clear();
-        renderScene(state, userInput_num_particles, inputText_num_particles, instructions, mode, window, num_particles, pause, mutualGravity,sources, particles);
+        renderScene(state, userInput_num_particles, userInput_mass_min, userInput_mass_max, inputText, instructions, mode, window, num_particles, pause, mutualGravity,sources, particles);
         window.display();
     }
 
