@@ -15,7 +15,7 @@ int main() {
     window.setFramerateLimit(60);
 
     sf::Font open_sans;
-    if (!open_sans.loadFromFile("C:\\Users\\Ibapo\\OneDrive\\Escritorio\\Projects\\SMFL_Learning\\SFML_FONTS\\Open_Sans\\OpenSans-VariableFont_wdth,wght.ttf")) {
+    if (!open_sans.loadFromFile("OpenSans-VariableFont_wdth,wght.ttf")) {
         std::cerr << "Failed to load font!\n";
         return -1;
     }
