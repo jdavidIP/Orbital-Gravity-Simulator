@@ -22,33 +22,40 @@ void addParticlesAtPosition(
     std::vector<Particle>& particles,
     sf::Vector2f pos,
     int count,
+    int i,
     float min_mass,
     float max_mass,
     const GravitySource& source
 ) {
+    float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
 
-    for (int i = 0; i < count; ++i) {
-        float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
+    float dx = pos.x - source.get_pos().x;
+    float dy = pos.y - source.get_pos().y;
+    float r_sq = dx * dx + dy * dy;
 
-        // Vector from source to spawn pos
-        float dx = pos.x - source.get_pos().x;
-        float dy = pos.y - source.get_pos().y;
-        float r = std::sqrt(dx * dx + dy * dy);
-
-        // Orbital speed
+    // Handle near-center case
+    if (r_sq < 1e-5f) {
+        particles.emplace_back(pos.x, pos.y, 0, 0, mass);
+    }
+    else {
+        float r = std::sqrt(r_sq);
         float v = std::sqrt(G * source.get_strength() / r);
 
-        // Tangent direction (perpendicular to radial)
+        // Normalized tangent vector
         float tx = -dy / r;
         float ty = dx / r;
 
-        float vel_x = v * tx;
-        float vel_y = v * ty;
+        // Base velocity + small random perturbation
+        float perturbation = 0.05f * v * (std::rand() % 100 - 50) / 50.0f;
+        float vel_x = v * tx + perturbation * tx;
+        float vel_y = v * ty + perturbation * ty;
 
         particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
-        float value = static_cast<float>(i) / count;
-        particles.back().set_color(map_value_to_color(value));
     }
+
+    // Color mapping
+    float value = static_cast<float>(i) / count;
+    particles.back().set_color(map_value_to_color(value));
 }
 
 

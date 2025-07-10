@@ -134,24 +134,23 @@ int main() {
 
                 GravitySource* target = findNearestSource(spawn_pos, sources);
                 if (target) {
-                    addParticlesAtPosition(particles, spawn_pos, num_particles, min_mass, max_mass, *target);
+                    for (int i = 0; i < num_particles; ++i)
+                    {
+                        addParticlesAtPosition(particles, spawn_pos, num_particles, i, min_mass, max_mass, *target);
+                    }
                 }
 
                 state = AppState::Running;
             }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                sources.emplace_back(pos.x, pos.y, DEFAULT_GRAVITY_STRENGTH);
+                sources.emplace_back(pos.x, pos.y, sources.size() > 0 ? 900.0f : 200.0f);
             }
             else if ((state == AppState::Running || state == AppState::Paused) && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
+                GravitySource* source = findNearestSource(pos, sources);
                 if (mode == Mode::AddParticle) {
-                    float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-                    float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
-                    particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
-                    float value = static_cast<float>(particles.size()) / (particles.size() + 100);
-                    particles.back().set_color(map_value_to_color(value));
+                    addParticlesAtPosition(particles, pos, particles.size(), particles.size(), min_mass, max_mass, *source);
                 }
                 else {
                     sources.emplace_back(pos.x, pos.y, DEFAULT_GRAVITY_STRENGTH);
