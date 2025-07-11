@@ -10,10 +10,6 @@
 // 1 px = 1000 km
 // 1 mass unit = 1 earth (5.97×10^24 kg)
 
-constexpr int WINDOW_HEIGHT = 900;
-constexpr int WINDOW_WIDTH = 1400;
-constexpr float DEFAULT_GRAVITY_STRENGTH = 25000.0f; // Based on a small red dwarf's mass
-
 int main() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     sf::RenderWindow window(desktop, "Gravity Simulator", sf::Style::Fullscreen);
@@ -44,14 +40,51 @@ int main() {
     instructions.setFillColor(sf::Color::White);
     instructions.setPosition(20, 20);
 
+    // Create particle type labels
+    std::vector<sf::Text> particleTypes;
+    std::vector<std::string> particleNames = {
+        "1: Planetoid", "2: Satellite", "3: Terrestrial",
+        "4: Gas Giant", "5: Ice Giant"
+    };
+    std::vector<sf::Color> particleColors = {
+        sf::Color(165, 42, 42),   // Planetoid - reddish brown
+        sf::Color(192, 192, 192), // Satellite - pale grey
+        sf::Color(11, 102, 35),   // Terrestrial - green
+        sf::Color(255, 174, 66),  // Gas Giant - yellowish orange
+        sf::Color(0, 255, 255)    // Ice Giant - cyan
+    };
+
+    for (size_t i = 0; i < particleNames.size(); ++i) {
+        sf::Text text(particleNames[i], open_sans, 20);
+        text.setFillColor(particleColors[i]);
+        particleTypes.push_back(text);
+    }
+
+    // Create gravity source type labels
+    std::vector<sf::Text> sourceTypes;
+    std::vector<std::string> sourceNames = {
+        "1: Red Dwarf", "2: White Dwarf", "3: Yellow Dwarf", "4: Neutron Star"
+    };
+    std::vector<sf::Color> sourceColors = {
+        sf::Color::Red, sf::Color::White,
+        sf::Color(139, 128, 0), sf::Color(175, 238, 238)
+    };
+
+    for (size_t i = 0; i < sourceNames.size(); ++i) {
+        sf::Text text(sourceNames[i], open_sans, 20);
+        text.setFillColor(sourceColors[i]);
+        sourceTypes.push_back(text);
+    }
+
+
     AppState state = AppState::AwaitingSources;
-    Mode mode = Mode::AddParticle;
+    Mode mode = Mode::AddSource;
 
     bool pause = false;
     bool mutualGravity = false;
 
     ParticleType particleType = ParticleType::Terrestrial;
-    GravitySourceType sourceType;
+    GravitySourceType sourceType = GravitySourceType::RedDwarf;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -78,18 +111,26 @@ int main() {
                 case sf::Keyboard::Num1:
                     if (mode == Mode::AddParticle)
                         particleType = ParticleType::Planetoid;
+                    else if (mode == Mode::AddSource)
+                        sourceType = GravitySourceType::RedDwarf;
                     break;
                 case sf::Keyboard::Num2:
                     if (mode == Mode::AddParticle)
                         particleType = ParticleType::Satellite;
+                    else if (mode == Mode::AddSource)
+                        sourceType = GravitySourceType::WhiteDwarf;
                     break;
                 case sf::Keyboard::Num3:
                     if (mode == Mode::AddParticle)
                         particleType = ParticleType::Terrestrial;
+                    else if (mode == Mode::AddSource)
+                        sourceType = GravitySourceType::YellowDwarf;
                     break;
                 case sf::Keyboard::Num4:
                     if (mode == Mode::AddParticle)
                         particleType = ParticleType::GasGiant;
+                    else if (mode == Mode::AddSource)
+                        sourceType = GravitySourceType::NeutronStar;
                     break;
                 case sf::Keyboard::Num5:
                     if (mode == Mode::AddParticle)
@@ -98,6 +139,7 @@ int main() {
                 case sf::Keyboard::Enter:
                     if (state == AppState::AwaitingSources && !sources.empty()) {
                         state = AppState::Running;
+                        mode = Mode::AddParticle;
                         pause = false;
                     }
                     break;
@@ -111,7 +153,7 @@ int main() {
             }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                sources.emplace_back(pos.x, pos.y, GravitySourceType::RedDwarf);
+                sources.emplace_back(pos.x, pos.y, sourceType);
             }
             else if ((state == AppState::Running || state == AppState::Paused) && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
@@ -120,7 +162,7 @@ int main() {
                     addParticlesAtPosition(particles, pos, particles.size(), particles.size(), particleType, *source);
                 }
                 else {
-                    sources.emplace_back(pos.x, pos.y, GravitySourceType::YellowDwarf);
+                    sources.emplace_back(pos.x, pos.y, sourceType);
                 }
             }
         }
@@ -131,7 +173,7 @@ int main() {
         }
 
         window.clear();
-        renderScene(state, userInput_num_particles, userInput_mass_min, userInput_mass_max, inputText, instructions, mode, window, pause, mutualGravity,sources, particles);
+        renderScene(state, particleTypes, sourceTypes, particleType, sourceType, instructions, mode, window, pause, mutualGravity,sources, particles);
         window.display();
     }
 

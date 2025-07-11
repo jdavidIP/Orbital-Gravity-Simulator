@@ -1,5 +1,7 @@
 #include "Utils.h"
 
+sf::Clock simClock;
+
 void addParticlesAtPosition(
     std::vector<Particle>& particles,
     sf::Vector2f pos,
@@ -42,10 +44,10 @@ void updateParticles(std::vector<Particle>& particles, const std::vector<Gravity
 
 void renderScene(
     AppState state,
-    const std::string& userInput_num_particles,
-    const std::string& userInput_min_mass,
-    const std::string& userInput_max_mass,
-    sf::Text& inputText,
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
@@ -54,6 +56,8 @@ void renderScene(
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 ) {
+    renderTypes(particleTypes, sourceTypes, particleType, sourceType, mode, window);
+
     switch (state) {
     case AppState::AwaitingSources:
         instructions.setString(
@@ -91,6 +95,50 @@ void renderScene(
 
     for (auto& source : sources) source.render(window);
     for (auto& particle : particles) particle.render(window);
+}
+
+void renderTypes(
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
+    Mode mode,
+    sf::RenderWindow& window) {
+
+    // Draw type selection in upper-right
+    float startX = window.getSize().x - 175; 
+    float startY = 20;
+    int lineHeight = 30;
+
+    const auto& types = (mode == Mode::AddParticle) ? particleTypes : sourceTypes;
+    int selectedIndex = (mode == Mode::AddParticle)
+        ? static_cast<int>(particleType)
+        : static_cast<int>(sourceType);
+
+    // Time for pulse animation
+    float time = simClock.getElapsedTime().asSeconds();
+    float pulse = (std::sin(time * 2.0f) + 1.0f) * 0.5f; // 0 to 1
+    float alpha = 128 + static_cast<int>(pulse * 127);   // 128-255
+    float scale = 1.0f + 0.1f * pulse;                   // 1.0x-1.1x
+
+    for (size_t i = 0; i < types.size(); ++i) {
+        sf::Text t = types[i];
+        t.setPosition(startX, startY + i * lineHeight);
+
+        if (i == selectedIndex) {
+            t.setFillColor(sf::Color(t.getFillColor().r, t.getFillColor().g, t.getFillColor().b, alpha));
+            t.setScale(scale, scale);
+            t.setOutlineThickness(2.0f);
+            t.setOutlineColor(sf::Color::Yellow);
+        }
+        else {
+            t.setFillColor(sf::Color(t.getFillColor().r, t.getFillColor().g, t.getFillColor().b, 180));
+            t.setScale(1.0f, 1.0f);
+            t.setOutlineThickness(0.0f);
+        }
+
+        window.draw(t);
+    }
 }
 
 GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources) {

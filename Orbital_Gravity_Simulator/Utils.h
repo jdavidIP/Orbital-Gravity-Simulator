@@ -11,10 +11,10 @@ void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, 
 void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity);
 void renderScene(
     AppState state,
-    const std::string& userInput_num_particles,
-    const std::string& userInput_min_mass,
-    const std::string& userInput_max_mass,
-    sf::Text& inputText_num_particles,
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
@@ -23,6 +23,13 @@ void renderScene(
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 );
+void renderTypes(
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
+    Mode mode,
+    sf::RenderWindow& window);
 GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources);
 
 #endif

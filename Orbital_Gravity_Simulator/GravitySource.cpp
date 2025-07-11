@@ -15,7 +15,7 @@ GravitySource::GravitySource(float pos_x, float pos_y, GravitySourceType type)
     case GravitySourceType::WhiteDwarf:
         strength = 56000.0f;
         s.setFillColor(sf::Color::White);
-        s.setRadius(1.2);
+        s.setRadius(11.5);
         break;
 
     case GravitySourceType::YellowDwarf:
@@ -26,7 +26,7 @@ GravitySource::GravitySource(float pos_x, float pos_y, GravitySourceType type)
 
     case GravitySourceType::NeutronStar:
         strength = 450000.0f;
-        s.setFillColor(sf::Color(216, 222, 236));
+        s.setFillColor(sf::Color(175, 238, 238));
         s.setRadius(14);
         break;
 
