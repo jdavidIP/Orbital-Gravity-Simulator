@@ -1,18 +1,47 @@
 #include "Particle.h"
 #include <cmath>
 
-Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, float mass)
-    : pos(pos_x, pos_y), velocity(vel_x, vel_y), mass(mass)
+Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, ParticleType type)
+    : pos(pos_x, pos_y), velocity(vel_x, vel_y), type(type)
 {
     s.setPosition(pos);
-    s.setFillColor(sf::Color::White);
+    mass = 0.0f;
+    
+    switch (type)
+    {
+    case ParticleType::Planetoid:
+        mass = 0.0035f;
+        s.setFillColor(sf::Color(165, 42, 42)); // reddish brown
+        s.setRadius(1.5);
+        break;
 
-    float minR = 1.5f;
-    float maxR = 15.0f;
-    float logMass = std::log10(mass + 1.0f);
-    float scale = (logMass / std::log10(MAX_MASS + 1.0f));
-    float radius = minR + scale * (maxR - minR);
-    s.setRadius(radius);
+    case ParticleType::Satellite:
+        mass = 0.01f;
+        s.setFillColor(sf::Color(192, 192, 192)); // pale grey
+        s.setRadius(3);
+        break;
+
+    case ParticleType::Terrestrial:
+        mass = 1.0f;
+        s.setFillColor(sf::Color(11, 102, 35)); // Forest green
+        s.setRadius(11);
+        break;
+
+    case ParticleType::GasGiant:
+        mass = 318.0f;
+        s.setFillColor(sf::Color(255, 174, 66));  // Yellowish orange
+        s.setRadius(24);
+        break;
+
+    case ParticleType::IceGiant:
+        mass = 17.0f;
+        s.setFillColor(sf::Color(0, 255, 255));  // cyan
+        s.setRadius(16);
+        break;
+
+    default:
+        break;
+    }
 }
 
 void Particle::render(sf::RenderWindow& window) {
@@ -129,11 +158,6 @@ void Particle::update_physics(
 
 }
 
-
-void Particle::set_color(sf::Color color) {
-    s.setFillColor(color);
-}
-
 sf::Vector2f Particle::get_pos() const {
     return pos;
 }
@@ -144,4 +168,8 @@ sf::Vector2f Particle::get_velocity() const {
 
 float Particle::get_mass() const {
     return mass;
+}
+
+ParticleType Particle::get_type() const {
+    return type;
 }

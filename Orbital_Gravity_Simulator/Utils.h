@@ -7,8 +7,7 @@
 #include "GravitySource.h"
 #include "AppState.h"
 
-sf::Color map_value_to_color(float value);
-void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count, int i, float min_mass, float max_mass, const GravitySource& source);
+void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count, int i, ParticleType type, const GravitySource& source);
 void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity);
 void renderScene(
     AppState state,
@@ -19,7 +18,6 @@ void renderScene(
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
-    int num_particles,
     bool pause,
     bool mutualGravity,
     std::vector<GravitySource>& sources,
