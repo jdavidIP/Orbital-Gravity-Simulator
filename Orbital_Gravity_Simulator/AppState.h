@@ -3,8 +3,7 @@
 
 // Enum for the overall application state
 enum class AppState {
-    AwaitingNumParticles,
-    AwaitingSpawnPos,
+    StartMenu,
     AwaitingSources,
     Running,
     Paused

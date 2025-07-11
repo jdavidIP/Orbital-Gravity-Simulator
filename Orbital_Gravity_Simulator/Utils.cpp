@@ -1,35 +1,40 @@
 #include "Utils.h"
 
-sf::Color map_value_to_color(float value) {
-    if (value < 0.0f) value = 0;
-    else if (value > 1.0f) value = 1;
+sf::Clock simClock;
 
-    int r = 0, g = 0, b = 0;
+void addParticlesAtPosition(
+    std::vector<Particle>& particles,
+    sf::Vector2f pos,
+    int count,
+    int i,
+    ParticleType type,
+    const GravitySource& source
+) {
+    float dx = pos.x - source.get_pos().x;
+    float dy = pos.y - source.get_pos().y;
+    float r_sq = dx * dx + dy * dy;
 
-    if (value < 0.5f) {
-        b = static_cast<int>(255 * (1.0f - 2 * value));
-        g = static_cast<int>(255 * 2 * value);
+    // Handle near-center case
+    if (r_sq < 1e-5f) {
+        particles.emplace_back(pos.x, pos.y, 0, 0, type);
     }
     else {
-        g = static_cast<int>(255 * (2.0f - 2 * value));
-        r = static_cast<int>(255 * (2 * value - 1));
-    }
+        float r = std::sqrt(r_sq);
+        float v = std::sqrt(G * source.get_strength() / r);
 
-    return sf::Color(r, g, b);
-}
+        // Normalized tangent vector
+        float tx = -dy / r;
+        float ty = dx / r;
 
-void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count) {
-    for (int i = 0; i < count; ++i) {
-        float vel_x = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-        float vel_y = static_cast<float>(std::rand() % 100 - 50) / 50.0f;
-        float min_mass = 0.1f;
-        float max_mass = 6.0f;
-        float mass = min_mass + static_cast<float>(std::rand()) / RAND_MAX * (max_mass - min_mass);
-        particles.emplace_back(pos.x, pos.y, vel_x, vel_y, mass);
-        float value = static_cast<float>(i) / count;
-        particles.back().set_color(map_value_to_color(value));
+        // Base velocity + small random perturbation
+        float perturbation = 0.05f * v * (std::rand() % 100 - 50) / 50.0f;
+        float vel_x = v * tx + perturbation * tx;
+        float vel_y = v * ty + perturbation * ty;
+
+        particles.emplace_back(pos.x, pos.y, vel_x, vel_y, type);
     }
 }
+
 
 void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity) {
     for (auto& particle : particles) {
@@ -39,35 +44,24 @@ void updateParticles(std::vector<Particle>& particles, const std::vector<Gravity
 
 void renderScene(
     AppState state,
-    const std::string& userInput_num_particles,
-    sf::Text& inputText_num_particles,
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
-    int num_particles,
     bool pause,
     bool mutualGravity,
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 ) {
+    renderTypes(particleTypes, sourceTypes, particleType, sourceType, mode, window);
+
     switch (state) {
-    case AppState::AwaitingNumParticles:
-        inputText_num_particles.setString(
-            "Enter number of particles: " + userInput_num_particles + "\nPress Enter to confirm."
-        );
-        window.draw(inputText_num_particles);
-        break;
-
-    case AppState::AwaitingSpawnPos:
-        instructions.setString(
-            "Click to choose spawn position for all " + std::to_string(num_particles) + " particles."
-        );
-        window.draw(instructions);
-        break;
-
     case AppState::AwaitingSources:
         instructions.setString(
-            "Click to add gravity sources.\nPress Enter to start simulation."
+            "Click to add gravity sources.\nPress Enter to confirm."
         );
         window.draw(instructions);
         break;
@@ -101,4 +95,75 @@ void renderScene(
 
     for (auto& source : sources) source.render(window);
     for (auto& particle : particles) particle.render(window);
+}
+
+void renderTypes(
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
+    Mode mode,
+    sf::RenderWindow& window) {
+
+    // Draw type selection in upper-right
+    float startX = window.getSize().x - 175; 
+    float startY = 20;
+    int lineHeight = 30;
+
+    const auto& types = (mode == Mode::AddParticle) ? particleTypes : sourceTypes;
+    int selectedIndex = (mode == Mode::AddParticle)
+        ? static_cast<int>(particleType)
+        : static_cast<int>(sourceType);
+
+    // Time for pulse animation
+    float time = simClock.getElapsedTime().asSeconds();
+    float pulse = (std::sin(time * 2.0f) + 1.0f) * 0.5f; // 0 to 1
+    float alpha = 128 + static_cast<int>(pulse * 127);   // 128-255
+    float scale = 1.0f + 0.1f * pulse;                   // 1.0x-1.1x
+
+    for (size_t i = 0; i < types.size(); ++i) {
+        sf::Text t = types[i];
+        t.setPosition(startX, startY + i * lineHeight);
+
+        if (i == selectedIndex) {
+            t.setFillColor(sf::Color(t.getFillColor().r, t.getFillColor().g, t.getFillColor().b, alpha));
+            t.setScale(scale, scale);
+            t.setOutlineThickness(2.0f);
+            t.setOutlineColor(sf::Color::Yellow);
+        }
+        else {
+            t.setFillColor(sf::Color(t.getFillColor().r, t.getFillColor().g, t.getFillColor().b, 180));
+            t.setScale(1.0f, 1.0f);
+            t.setOutlineThickness(0.0f);
+        }
+
+        window.draw(t);
+    }
+}
+
+void renderStartMenu(const sf::Text titleText, sf::Text subtitleText, sf::RenderWindow& window)
+{
+    float time = simClock.getElapsedTime().asSeconds();
+    float alpha = 128 + 127 * std::sin(time * 2.5f); // Faster pulse
+    sf::Color subColor = subtitleText.getFillColor();
+    subColor.a = static_cast<sf::Uint8>(alpha);
+    subtitleText.setFillColor(subColor);
+
+    window.draw(titleText);
+    window.draw(subtitleText);
+}
+
+GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources) {
+    GravitySource* closest = nullptr;
+    float minDist2 = std::numeric_limits<float>::max();
+    for (auto& s : sources) {
+        float dx = s.get_pos().x - pos.x;
+        float dy = s.get_pos().y - pos.y;
+        float dist2 = dx * dx + dy * dy;
+        if (dist2 < minDist2) {
+            minDist2 = dist2;
+            closest = &s;
+        }
+    }
+    return closest;
 }

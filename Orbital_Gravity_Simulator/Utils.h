@@ -7,21 +7,32 @@
 #include "GravitySource.h"
 #include "AppState.h"
 
-sf::Color map_value_to_color(float value);
-void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count);
+void addParticlesAtPosition(std::vector<Particle>& particles, sf::Vector2f pos, int count, int i, ParticleType type, const GravitySource& source);
 void updateParticles(std::vector<Particle>& particles, const std::vector<GravitySource>& sources, bool mutualGravity);
 void renderScene(
     AppState state,
-    const std::string& userInput_num_particles,
-    sf::Text& inputText_num_particles,
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
     sf::Text& instructions,
     Mode mode,
     sf::RenderWindow& window,
-    int num_particles,
     bool pause,
     bool mutualGravity,
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 );
+void renderTypes(
+    const std::vector<sf::Text>& particleTypes,
+    const std::vector<sf::Text>& sourceTypes,
+    const ParticleType particleType,
+    const GravitySourceType sourceType,
+    Mode mode,
+    sf::RenderWindow& window
+
+);
+void renderStartMenu(const sf::Text titleText, sf::Text subtitleText, sf::RenderWindow& window);
+GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources);
 
 #endif
