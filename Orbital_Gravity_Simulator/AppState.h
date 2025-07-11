@@ -3,6 +3,7 @@
 
 // Enum for the overall application state
 enum class AppState {
+    StartMenu,
     AwaitingSources,
     Running,
     Paused

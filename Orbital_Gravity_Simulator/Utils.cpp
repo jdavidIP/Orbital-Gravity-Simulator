@@ -141,6 +141,18 @@ void renderTypes(
     }
 }
 
+void renderStartMenu(const sf::Text titleText, sf::Text subtitleText, sf::RenderWindow& window)
+{
+    float time = simClock.getElapsedTime().asSeconds();
+    float alpha = 128 + 127 * std::sin(time * 2.5f); // Faster pulse
+    sf::Color subColor = subtitleText.getFillColor();
+    subColor.a = static_cast<sf::Uint8>(alpha);
+    subtitleText.setFillColor(subColor);
+
+    window.draw(titleText);
+    window.draw(subtitleText);
+}
+
 GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources) {
     GravitySource* closest = nullptr;
     float minDist2 = std::numeric_limits<float>::max();

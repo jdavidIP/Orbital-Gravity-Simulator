@@ -29,7 +29,10 @@ void renderTypes(
     const ParticleType particleType,
     const GravitySourceType sourceType,
     Mode mode,
-    sf::RenderWindow& window);
+    sf::RenderWindow& window
+
+);
+void renderStartMenu(const sf::Text titleText, sf::Text subtitleText, sf::RenderWindow& window);
 GravitySource* findNearestSource(sf::Vector2f pos, std::vector<GravitySource>& sources);
 
 #endif

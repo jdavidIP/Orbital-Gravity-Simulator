@@ -24,9 +24,25 @@ int main() {
     std::vector<GravitySource> sources;
     std::vector<Particle> particles;
 
-    std::string userInput_num_particles;
-    std::string userInput_mass_min;
-    std::string userInput_mass_max;
+    sf::Text titleText;
+    titleText.setFont(open_sans);
+    titleText.setCharacterSize(100);
+    titleText.setFillColor(sf::Color::White);
+    titleText.setString("Orbital Gravity Simulator");
+
+    sf::FloatRect titleBounds = titleText.getLocalBounds();
+    titleText.setOrigin(titleBounds.width / 2.f, titleBounds.height / 2.f);
+    titleText.setPosition(desktop.width / 2.f, desktop.height / 2.f - 150);
+
+    sf::Text subtitleText;
+    subtitleText.setFont(open_sans);
+    subtitleText.setCharacterSize(40);
+    subtitleText.setFillColor(sf::Color::White);
+    subtitleText.setString("Enter to Start");
+
+    sf::FloatRect subtitleBounds = subtitleText.getLocalBounds();
+    subtitleText.setOrigin(subtitleBounds.width / 2.f, subtitleBounds.height / 2.f);
+    subtitleText.setPosition(desktop.width / 2.f, desktop.height / 2.f + 20);
 
     sf::Text inputText;
     inputText.setFont(open_sans);
@@ -77,7 +93,7 @@ int main() {
     }
 
 
-    AppState state = AppState::AwaitingSources;
+    AppState state = AppState::StartMenu;
     Mode mode = Mode::AddSource;
 
     bool pause = false;
@@ -104,6 +120,8 @@ int main() {
                     {
                         particles.clear();
                         sources.clear();
+                        state = AppState::AwaitingSources;
+                        mode = Mode::AddSource;
                         mutualGravity = false;
                         pause = false;
                     }
@@ -137,7 +155,11 @@ int main() {
                         particleType = ParticleType::IceGiant;
                     break;
                 case sf::Keyboard::Enter:
-                    if (state == AppState::AwaitingSources && !sources.empty()) {
+                    if (state == AppState::StartMenu)
+                    {
+                        state = AppState::AwaitingSources;
+                    }
+                    else if (state == AppState::AwaitingSources && !sources.empty()) {
                         state = AppState::Running;
                         mode = Mode::AddParticle;
                         pause = false;
@@ -173,7 +195,7 @@ int main() {
         }
 
         window.clear();
-        renderScene(state, particleTypes, sourceTypes, particleType, sourceType, instructions, mode, window, pause, mutualGravity,sources, particles);
+        state == AppState::StartMenu ? renderStartMenu(titleText, subtitleText, window) : renderScene(state, particleTypes, sourceTypes, particleType, sourceType, instructions, mode, window, pause, mutualGravity,sources, particles);
         window.display();
     }
 
