@@ -7,7 +7,7 @@
 #include "Utils.h"
 
 // SCALES
-// 1 px = 1000 km
+// 1 px = 600 km
 // 1 mass unit = 1 earth (5.97×10^24 kg)
 
 int main() {

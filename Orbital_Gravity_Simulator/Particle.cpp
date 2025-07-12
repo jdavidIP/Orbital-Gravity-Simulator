@@ -12,31 +12,31 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, ParticleT
     case ParticleType::Planetoid:
         mass = 0.0035f;
         s.setFillColor(sf::Color(165, 42, 42)); // reddish brown
-        s.setRadius(1.5);
+        s.setRadius(0.783f);
         break;
 
     case ParticleType::Satellite:
         mass = 0.01f;
         s.setFillColor(sf::Color(192, 192, 192)); // pale grey
-        s.setRadius(3);
+        s.setRadius(2.8906f);
         break;
 
     case ParticleType::Terrestrial:
         mass = 1.0f;
         s.setFillColor(sf::Color(11, 102, 35)); // Forest green
-        s.setRadius(11);
+        s.setRadius(10.63f);
         break;
 
     case ParticleType::GasGiant:
         mass = 318.0f;
         s.setFillColor(sf::Color(255, 174, 66));  // Yellowish orange
-        s.setRadius(24);
+        s.setRadius(119.153f);
         break;
 
     case ParticleType::IceGiant:
         mass = 17.0f;
         s.setFillColor(sf::Color(0, 255, 255));  // cyan
-        s.setRadius(16);
+        s.setRadius(41.66f);
         break;
 
     default:

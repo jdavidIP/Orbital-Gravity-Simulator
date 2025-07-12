@@ -9,25 +9,25 @@ GravitySource::GravitySource(float pos_x, float pos_y, GravitySourceType type)
     case GravitySourceType::RedDwarf:
         strength = 25000.0f;
         s.setFillColor(sf::Color::Red);
-        s.setRadius(24);
+        s.setRadius(178.8f);
         break;
 
     case GravitySourceType::WhiteDwarf:
         strength = 56000.0f;
         s.setFillColor(sf::Color::White);
-        s.setRadius(11.5);
+        s.setRadius(11.66f);
         break;
 
     case GravitySourceType::YellowDwarf:
         strength = 333000.0f;
         s.setFillColor(sf::Color(139, 128, 0));
-        s.setRadius(60);
+        s.setRadius(1160.56f);
         break;
 
     case GravitySourceType::NeutronStar:
         strength = 450000.0f;
         s.setFillColor(sf::Color(175, 238, 238));
-        s.setRadius(14);
+        s.setRadius(0.023f);
         break;
 
     default:
