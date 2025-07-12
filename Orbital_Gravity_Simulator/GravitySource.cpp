@@ -37,6 +37,7 @@ GravitySource::GravitySource(float pos_x, float pos_y, GravitySourceType type)
 }
 
 void GravitySource::render(sf::RenderWindow& window) {
+    s.setOrigin(s.getRadius(), s.getRadius());
     window.draw(s);
 }
 

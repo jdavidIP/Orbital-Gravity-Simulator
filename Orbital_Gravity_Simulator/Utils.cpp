@@ -56,14 +56,13 @@ void renderScene(
     std::vector<GravitySource>& sources,
     std::vector<Particle>& particles
 ) {
-    renderTypes(particleTypes, sourceTypes, particleType, sourceType, mode, window);
 
     switch (state) {
     case AppState::AwaitingSources:
         instructions.setString(
             "Click to add gravity sources.\nPress Enter to confirm."
         );
-        window.draw(instructions);
+      
         break;
 
     case AppState::Paused:
@@ -76,7 +75,6 @@ void renderScene(
             "Press R: Restart\n"
             "Press Esc: Quit"
         );
-        window.draw(instructions);
         break;
 
     case AppState::Running:
@@ -89,7 +87,6 @@ void renderScene(
             "Press R: Restart\n"
             "Press Esc: Quit"
         );
-        window.draw(instructions);
         break;
     }
 
@@ -106,7 +103,7 @@ void renderTypes(
     sf::RenderWindow& window) {
 
     // Draw type selection in upper-right
-    float startX = window.getSize().x - 175; 
+    float startX = window.getSize().x - 165; 
     float startY = 20;
     int lineHeight = 30;
 

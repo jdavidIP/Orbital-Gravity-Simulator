@@ -46,6 +46,7 @@ Particle::Particle(float pos_x, float pos_y, float vel_x, float vel_y, ParticleT
 
 void Particle::render(sf::RenderWindow& window) {
     s.setPosition(pos);
+    s.setOrigin(s.getRadius(), s.getRadius());
     window.draw(s);
 }
 
