@@ -50,114 +50,94 @@ void Particle::render(sf::RenderWindow& window) {
     window.draw(s);
 }
 
-void Particle::update_physics(const GravitySource& source) {
-
-    // --- Compute acceleration at current position --- 
-    sf::Vector2f a0;
-    {
-        float dx = source.get_pos().x - pos.x;
-        float dy = source.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-        float dist = std::sqrt(dist2);
-        float a_mag = G * source.get_strength() / dist2;
-        a0 = { a_mag * dx / dist, a_mag * dy / dist };
-    }
-
-    // --- First half-step for velocity ---
-    velocity.x += 0.5f * a0.x * dt;
-    velocity.y += 0.5f * a0.y * dt;
-
-    // --- Full step for position ---
-    pos.x += velocity.x * dt;
-    pos.y += velocity.y * dt;
-
-    // --- Compute acceleration at new position ---
-    sf::Vector2f a1;
-    {
-        float dx = source.get_pos().x - pos.x;
-        float dy = source.get_pos().y - pos.y;
-        float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-        float dist = std::sqrt(dist2);
-        float a_mag = G * source.get_strength() / dist2;
-        a1 = { a_mag * dx / dist, a_mag * dy / dist };
-    }
-
-    // --- Second half-step for velocity ---
-    velocity.x += 0.5f * a1.x * dt;
-    velocity.y += 0.5f * a1.y * dt;
-}
-
 void Particle::update_physics(
     const std::vector<Particle>& others,
     const std::vector<GravitySource>& sources,
     bool mutualGravity
 ) {
-
-    // --- 1) Compute acceleration at current position ---
     sf::Vector2f accel0(0.f, 0.f);
 
-    // from fixed sources
-    for (auto const& src : sources) {
+    // Fixed sources
+    for (const auto& src : sources) {
         float dx = src.get_pos().x - pos.x;
         float dy = src.get_pos().y - pos.y;
         float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-        float invDist = 1.0f / std::sqrt(dist2);
+        float dist = std::sqrt(dist2);
+
+        // Effective distance includes visual radii
+        float effectiveDist = dist - (src.get_radius() + get_radius());
+        if (effectiveDist < SOFTENING) effectiveDist = SOFTENING;
+
+        float invDist = 1.0f / effectiveDist;
         float a_mag = G * src.get_strength() * invDist * invDist;
-        accel0.x += a_mag * dx * invDist;
-        accel0.y += a_mag * dy * invDist;
+        accel0.x += a_mag * dx / dist;
+        accel0.y += a_mag * dy / dist;
     }
 
-    // mutual gravity
+    // Mutual gravity
     if (mutualGravity) {
-        for (auto const& other : others) {
+        for (const auto& other : others) {
             if (&other == this) continue;
             float dx = other.get_pos().x - pos.x;
             float dy = other.get_pos().y - pos.y;
-            float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-            float invDist = 1.0f / std::sqrt(dist2);
+            float dist = std::sqrt(dx * dx + dy * dy);
+
+            float effectiveDist = dist - (other.get_radius() + get_radius());
+            if (effectiveDist < SOFTENING) effectiveDist = SOFTENING;
+
+            float invDist = 1.0f / effectiveDist;
             float a_mag = G * other.get_mass() * invDist * invDist;
-            // Note: F=G*m_other*m_self/r^2, a=F/m_self => G*m_other/r^2
-            accel0.x += a_mag * dx * invDist;
-            accel0.y += a_mag * dy * invDist;
+            accel0.x += a_mag * dx / dist;
+            accel0.y += a_mag * dy / dist;
         }
     }
 
-    // --- 2) Half-step velocity ---
+    // Half-step velocity
     velocity += accel0 * (0.5f * dt);
 
-    // --- 3) Full-step position ---
+    // Full-step position
     pos += velocity * dt;
 
-    // --- 4) Compute acceleration at new position ---
+    // Recompute acceleration at new position
     sf::Vector2f accel1(0.f, 0.f);
 
-    for (auto const& src : sources) {
+    for (const auto& src : sources) {
         float dx = src.get_pos().x - pos.x;
         float dy = src.get_pos().y - pos.y;
         float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-        float invDist = 1.0f / std::sqrt(dist2);
+        float dist = std::sqrt(dist2);
+
+        float effectiveDist = dist - (src.get_radius() + get_radius());
+        if (effectiveDist < SOFTENING) effectiveDist = SOFTENING;
+
+        float invDist = 1.0f / effectiveDist;
         float a_mag = G * src.get_strength() * invDist * invDist;
-        accel1.x += a_mag * dx * invDist;
-        accel1.y += a_mag * dy * invDist;
+        accel1.x += a_mag * dx / dist;
+        accel1.y += a_mag * dy / dist;
     }
 
     if (mutualGravity) {
-        for (auto const& other : others) {
+        for (const auto& other : others) {
             if (&other == this) continue;
             float dx = other.get_pos().x - pos.x;
             float dy = other.get_pos().y - pos.y;
             float dist2 = dx * dx + dy * dy + SOFTENING * SOFTENING;
-            float invDist = 1.0f / std::sqrt(dist2);
-            float a_mag = G * other.get_mass() * invDist * invDist / mass;
-            accel1.x += a_mag * dx * invDist;
-            accel1.y += a_mag * dy * invDist;
+            float dist = std::sqrt(dist2);
+
+            float effectiveDist = dist - (other.get_radius() + get_radius());
+            if (effectiveDist < SOFTENING) effectiveDist = SOFTENING;
+
+            float invDist = 1.0f / effectiveDist;
+            float a_mag = G * other.get_mass() * invDist * invDist;
+            accel1.x += a_mag * dx / dist;
+            accel1.y += a_mag * dy / dist;
         }
     }
 
-    // --- 5) Second half-step velocity ---
+    // Second half-step velocity
     velocity += accel1 * (0.5f * dt);
-
 }
+
 
 sf::Vector2f Particle::get_pos() const {
     return pos;
@@ -173,4 +153,8 @@ float Particle::get_mass() const {
 
 ParticleType Particle::get_type() const {
     return type;
+}
+
+float Particle::get_radius() const {
+    return s.getRadius();
 }

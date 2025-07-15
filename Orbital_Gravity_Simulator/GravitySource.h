@@ -22,7 +22,9 @@ public:
     void render(sf::RenderWindow& window);
     sf::Vector2f get_pos() const;
     float get_strength() const;
+    float get_radius() const;
     GravitySourceType get_type() const;
+
 };
 
 #endif
