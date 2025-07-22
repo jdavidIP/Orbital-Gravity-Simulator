@@ -7,12 +7,18 @@
 #include "Utils.h"
 
 // SCALES
-// 1 px = 1000 km
+// 1 px = 600 km
 // 1 mass unit = 1 earth (5.97×10^24 kg)
 
 int main() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     sf::RenderWindow window(desktop, "Gravity Simulator", sf::Style::Fullscreen);
+    sf::View view = window.getDefaultView();
+    float zoomLevel = 1.0f;
+
+    bool dragging = false;
+    sf::Vector2i dragStart;
+
     window.setFramerateLimit(60);
 
     sf::Font open_sans;
@@ -44,39 +50,32 @@ int main() {
     subtitleText.setOrigin(subtitleBounds.width / 2.f, subtitleBounds.height / 2.f);
     subtitleText.setPosition(desktop.width / 2.f, desktop.height / 2.f + 20);
 
-    sf::Text inputText;
-    inputText.setFont(open_sans);
-    inputText.setCharacterSize(24);
-    inputText.setFillColor(sf::Color::White);
-    inputText.setPosition(20, 20);
-
     sf::Text instructions;
     instructions.setFont(open_sans);
     instructions.setCharacterSize(20);
     instructions.setFillColor(sf::Color::White);
     instructions.setPosition(20, 20);
 
-    // Create particle type labels
+    // Particle types and colors
     std::vector<sf::Text> particleTypes;
     std::vector<std::string> particleNames = {
         "1: Planetoid", "2: Satellite", "3: Terrestrial",
         "4: Gas Giant", "5: Ice Giant"
     };
     std::vector<sf::Color> particleColors = {
-        sf::Color(165, 42, 42),   // Planetoid - reddish brown
-        sf::Color(192, 192, 192), // Satellite - pale grey
-        sf::Color(11, 102, 35),   // Terrestrial - green
-        sf::Color(255, 174, 66),  // Gas Giant - yellowish orange
-        sf::Color(0, 255, 255)    // Ice Giant - cyan
+        sf::Color(165, 42, 42),   // reddish brown
+        sf::Color(192, 192, 192), // pale grey
+        sf::Color(11, 102, 35),   // green
+        sf::Color(255, 174, 66),  // orange
+        sf::Color(0, 255, 255)    // cyan
     };
-
     for (size_t i = 0; i < particleNames.size(); ++i) {
         sf::Text text(particleNames[i], open_sans, 20);
         text.setFillColor(particleColors[i]);
         particleTypes.push_back(text);
     }
 
-    // Create gravity source type labels
+    // Gravity source types and colors
     std::vector<sf::Text> sourceTypes;
     std::vector<std::string> sourceNames = {
         "1: Red Dwarf", "2: White Dwarf", "3: Yellow Dwarf", "4: Neutron Star"
@@ -85,13 +84,11 @@ int main() {
         sf::Color::Red, sf::Color::White,
         sf::Color(139, 128, 0), sf::Color(175, 238, 238)
     };
-
     for (size_t i = 0; i < sourceNames.size(); ++i) {
         sf::Text text(sourceNames[i], open_sans, 20);
         text.setFillColor(sourceColors[i]);
         sourceTypes.push_back(text);
     }
-
 
     AppState state = AppState::StartMenu;
     Mode mode = Mode::AddSource;
@@ -112,53 +109,40 @@ int main() {
                 case sf::Keyboard::Escape: window.close(); break;
                 case sf::Keyboard::P: mode = Mode::AddParticle; break;
                 case sf::Keyboard::S: mode = Mode::AddSource; break;
-                case sf::Keyboard::G:
-                    mutualGravity = !mutualGravity;
-                    break;
+                case sf::Keyboard::G: mutualGravity = !mutualGravity; break;
                 case sf::Keyboard::R:
-                    if (state == AppState::Running || state == AppState::Paused)
-                    {
-                        particles.clear();
-                        sources.clear();
-                        state = AppState::AwaitingSources;
-                        mode = Mode::AddSource;
-                        mutualGravity = false;
-                        pause = false;
-                    }
+                    particles.clear();
+                    sources.clear();
+                    state = AppState::AwaitingSources;
+                    mode = Mode::AddSource;
+                    zoomLevel = 1.0f;
+                    view = window.getDefaultView();
+                    window.setView(view);
+                    mutualGravity = false;
+                    pause = false;
                     break;
                 case sf::Keyboard::Num1:
-                    if (mode == Mode::AddParticle)
-                        particleType = ParticleType::Planetoid;
-                    else if (mode == Mode::AddSource)
-                        sourceType = GravitySourceType::RedDwarf;
+                    if (mode == Mode::AddParticle) particleType = ParticleType::Planetoid;
+                    else sourceType = GravitySourceType::RedDwarf;
                     break;
                 case sf::Keyboard::Num2:
-                    if (mode == Mode::AddParticle)
-                        particleType = ParticleType::Satellite;
-                    else if (mode == Mode::AddSource)
-                        sourceType = GravitySourceType::WhiteDwarf;
+                    if (mode == Mode::AddParticle) particleType = ParticleType::Satellite;
+                    else sourceType = GravitySourceType::WhiteDwarf;
                     break;
                 case sf::Keyboard::Num3:
-                    if (mode == Mode::AddParticle)
-                        particleType = ParticleType::Terrestrial;
-                    else if (mode == Mode::AddSource)
-                        sourceType = GravitySourceType::YellowDwarf;
+                    if (mode == Mode::AddParticle) particleType = ParticleType::Terrestrial;
+                    else sourceType = GravitySourceType::YellowDwarf;
                     break;
                 case sf::Keyboard::Num4:
-                    if (mode == Mode::AddParticle)
-                        particleType = ParticleType::GasGiant;
-                    else if (mode == Mode::AddSource)
-                        sourceType = GravitySourceType::NeutronStar;
+                    if (mode == Mode::AddParticle) particleType = ParticleType::GasGiant;
+                    else sourceType = GravitySourceType::NeutronStar;
                     break;
                 case sf::Keyboard::Num5:
-                    if (mode == Mode::AddParticle)
-                        particleType = ParticleType::IceGiant;
+                    if (mode == Mode::AddParticle) particleType = ParticleType::IceGiant;
                     break;
                 case sf::Keyboard::Enter:
                     if (state == AppState::StartMenu)
-                    {
                         state = AppState::AwaitingSources;
-                    }
                     else if (state == AppState::AwaitingSources && !sources.empty()) {
                         state = AppState::Running;
                         mode = Mode::AddParticle;
@@ -173,29 +157,72 @@ int main() {
                     break;
                 }
             }
+            else if (event.type == sf::Event::MouseWheelScrolled && state != AppState::StartMenu) {
+                // Zoom to mouse pointer
+                sf::Vector2f beforeZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window), view);
+                if (event.mouseWheelScroll.delta > 0)
+                    zoomLevel *= 0.9f; // zoom in
+                else
+                    zoomLevel *= 1.1f; // zoom out
+                view.setSize(window.getDefaultView().getSize());
+                view.zoom(zoomLevel);
+                sf::Vector2f afterZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window), view);
+                view.move(beforeZoom - afterZoom);
+                window.setView(view);
+            }
+            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right && state != AppState::StartMenu) {
+                dragging = true;
+                dragStart = sf::Mouse::getPosition(window);
+            }
+            else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Right && state != AppState::StartMenu) {
+                dragging = false;
+            }
+            else if (event.type == sf::Event::MouseMoved && dragging) {
+                sf::Vector2i dragCurrent = sf::Mouse::getPosition(window);
+                sf::Vector2f delta = window.mapPixelToCoords(dragStart, view) - window.mapPixelToCoords(dragCurrent, view);
+                view.move(delta);
+                dragStart = dragCurrent;
+                window.setView(view);
+            }
             else if (state == AppState::AwaitingSources && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
+                sf::Vector2f pos = window.mapPixelToCoords(sf::Mouse::getPosition(window), view);
                 sources.emplace_back(pos.x, pos.y, sourceType);
             }
             else if ((state == AppState::Running || state == AppState::Paused) && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2f pos = { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
+                sf::Vector2f pos = window.mapPixelToCoords(sf::Mouse::getPosition(window), view);
                 GravitySource* source = findNearestSource(pos, sources);
-                if (mode == Mode::AddParticle) {
+                if (mode == Mode::AddParticle)
                     addParticlesAtPosition(particles, pos, particles.size(), particles.size(), particleType, *source);
-                }
-                else {
+                else
                     sources.emplace_back(pos.x, pos.y, sourceType);
-                }
             }
         }
 
-        // Only update physics when running and not paused
-        if (state == AppState::Running && !pause) {
+        if (state == AppState::Running && !pause)
             updateParticles(particles, sources, mutualGravity);
-        }
 
         window.clear();
-        state == AppState::StartMenu ? renderStartMenu(titleText, subtitleText, window) : renderScene(state, particleTypes, sourceTypes, particleType, sourceType, instructions, mode, window, pause, mutualGravity,sources, particles);
+        window.setView(view);
+
+        // Draw simulation scene in zoomed/panned view
+        if (state == AppState::StartMenu) {
+            renderStartMenu(titleText, subtitleText, window);
+        }
+        else
+        {
+            renderScene(state, particleTypes, sourceTypes, particleType, sourceType,
+                instructions, mode, window, pause, mutualGravity, sources, particles);
+        }
+
+        // Switch to default view for UI elements pinned to screen
+        window.setView(window.getDefaultView());
+
+        if (state != AppState::StartMenu)
+        {
+            window.draw(instructions);
+            renderTypes(particleTypes, sourceTypes, particleType, sourceType, mode, window);
+        }
+
         window.display();
     }
 
