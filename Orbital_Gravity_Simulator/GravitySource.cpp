@@ -56,3 +56,12 @@ float GravitySource::get_radius() const {
 GravitySourceType GravitySource::get_type() const {
     return type;
 }
+
+void GravitySource::set_pos(float pos_x, float pos_y) {
+	pos.x = pos_x;
+    pos.y = pos_y;
+}
+
+void GravitySource::set_strength(float strength) {
+    this->strength = strength;
+}

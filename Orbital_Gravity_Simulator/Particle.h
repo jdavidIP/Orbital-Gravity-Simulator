@@ -17,6 +17,7 @@ enum class ParticleType {
 };
 
 class Particle {
+private:
     sf::Vector2f pos;
     sf::Vector2f velocity;
     sf::CircleShape s;
